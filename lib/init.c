@@ -590,3 +590,8 @@ void smb2_set_version(struct smb2_context *smb2,
         smb2->version = version;
 }
 
+void smb2_enable_context_tracing(struct smb2_context *smb2, int val)
+{
+        smb2->enable_context_tracing = val;
+}
+

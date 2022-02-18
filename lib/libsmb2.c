@@ -2632,3 +2632,42 @@ smb2_fd_event_callbacks(struct smb2_context *smb2,
         smb2->change_fd = change_fd;
         smb2->change_events = change_events;
 }
+
+
+void smb2_dump_pdu(struct smb2_pdu *pdu) {
+        if (pdu == NULL) {
+                return;
+        }
+
+        fprintf(stdout, "------------------------\n");
+        fprintf(stdout, "Message id = %lu, Command type = %d, Credit Charge = %d, Status = %d, Credit Request response = %d\n",
+                pdu->header.message_id, pdu->header.command, pdu->header.credit_charge, pdu->header.status, pdu->header.credit_request_response);
+        fprintf(stdout, "------------------------\n");
+        fflush(stdout);
+}
+
+void smb2_dump_queue(struct smb2_pdu *queue_head) {
+        struct smb2_pdu *curr_pdu = queue_head;
+        while (curr_pdu) {
+                smb2_dump_pdu(curr_pdu);
+                curr_pdu = curr_pdu->next_compound;
+        }
+}
+
+void smb2_maybe_log_context(struct smb2_context *smb2) {
+    if (smb2->enable_context_tracing == 0) {
+            return;
+    }
+
+    fprintf(stdout, "\n=========================================\n");
+    fprintf(stdout, "credits: %d, recv state: %d\n", smb2->credits, smb2->recv_state);
+
+    fprintf(stdout, "State of outqueue:\n");
+    smb2_dump_queue(smb2->outqueue);
+
+    fprintf(stdout, "State of waitqueue:\n");
+    smb2_dump_queue(smb2->waitqueue);
+
+    fprintf(stdout, "=========================================\n\n");
+    fflush(stdout);
+}

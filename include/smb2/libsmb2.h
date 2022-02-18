@@ -231,6 +231,14 @@ void smb2_set_version(struct smb2_context *smb2,
  */
 void smb2_set_security_mode(struct smb2_context *smb2, uint16_t security_mode);
 
+/**
+ * Set if smb2 context tracing needs to be done.
+ * Metadata of the PDUs written/read will be logged.
+ * 0  : Do not enable context tracing
+ * !0 : Enable context tracing. There will be a performance hit.
+ */
+void smb2_enable_context_tracing(struct smb2_context *smb2, int val);
+
 /*
  * Set whether smb3 encryption should be used or not.
  * 0  : disable encryption. This is the default.

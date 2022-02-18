@@ -78,6 +78,8 @@
 #include <fcntl.h>
 #endif
 
+#include <stdio.h>
+
 #if !defined(PS2_EE_PLATFORM) && !defined(PS2_IOP_PLATFORM)
 #include <sys/socket.h>
 #endif
@@ -373,6 +375,8 @@ read_more_data:
                 /* Record the offset for the start of payload data. */
                 smb2->payload_offset = smb2->in.num_done;
 
+                LIBSMB2_MAYBE_TRACE(smb2, "Adding back credits = %d\n",
+                                            smb2->hdr.credit_request_response);
                 smb2->credits += smb2->hdr.credit_request_response;
 
                 if (!(smb2->hdr.flags & SMB2_FLAGS_SERVER_TO_REDIR)) {
@@ -579,6 +583,11 @@ read_more_data:
                                        "PDU");
                         return -1;
                 }
+        }
+
+        if (smb2->enable_context_tracing) {
+                LIBSMB2_TRACE("\nRead PDU: \n");
+                smb2_dump_pdu(pdu);
         }
 
         is_chained = smb2->hdr.next_command;
@@ -788,17 +797,33 @@ smb2_service_fd(struct smb2_context *smb2, int fd, int revents)
         }
 
         if (revents & POLLIN) {
-                if (smb2_read_from_socket(smb2) != 0) {
+                smb2_maybe_log_context(smb2);
+
+                LIBSMB2_MAYBE_TRACE(smb2, "Reading from socket..\n");
+
+		int saved_errno = smb2_read_from_socket(smb2);
+                if (saved_errno != 0) {
+                        LIBSMB2_TRACE("Encountered error in reading from socket %d\n", saved_errno);
+                        smb2_maybe_log_context(smb2);
                         ret = -1;
                         goto out;
                 }
         }
 
         if (revents & POLLOUT && smb2->outqueue != NULL) {
-                if (smb2_write_to_socket(smb2) != 0) {
+                smb2_maybe_log_context(smb2);
+
+                LIBSMB2_MAYBE_TRACE(smb2, "Writing to socket..\n");
+
+		int saved_errno = smb2_write_to_socket(smb2);
+
+                smb2_maybe_log_context(smb2);
+
+                if (saved_errno != 0) {
+                        LIBSMB2_TRACE("Encountered error in writing to socket %d\n", saved_errno);
                         ret = -1;
                         goto out;
-                }
+		}
         }
 
  out:

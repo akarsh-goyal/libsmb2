@@ -34,6 +34,23 @@ extern "C" {
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
+#define LIBSMB2_TRACE(...)                    \
+        do                                    \
+        {                                     \
+                fprintf(stdout, __VA_ARGS__); \
+                fflush(stdout);               \
+                                              \
+        } while (0)
+
+#define LIBSMB2_MAYBE_TRACE(smb2, ...)                \
+        do                                            \
+        {                                             \
+                if (smb2->enable_context_tracing > 0) \
+                {                                     \
+                        LIBSMB2_TRACE(__VA_ARGS__);   \
+                }                                     \
+        } while (0)
+
 #ifndef discard_const
 #define discard_const(ptr) ((void *)((intptr_t)(ptr)))
 #endif
@@ -227,6 +244,8 @@ struct smb2_context {
         /* dcerpc settings */
         int ndr;
         int endianess;
+
+        int enable_context_tracing; 
 };
 
 #define SMB2_MAX_PDU_SIZE 16*1024*1024
@@ -283,6 +302,15 @@ struct utf16 *utf8_to_utf16(const char *utf8);
  * the utf8 string.
  */
 const char *utf16_to_utf8(const uint16_t *str, int len);
+
+/* Logs some of the fields of the SMB2 PDU header */
+void smb2_dump_pdu(struct smb2_pdu *pdu);
+
+/* Logs the metdata of the PDUs present in the queue pointed by 'queue_head' */
+void smb2_dump_queue(struct smb2_pdu *queue_head);
+
+/* Logs some of the fields of the smb2 context */
+void smb2_maybe_log_context(struct smb2_context *smb2);
 
 /* Convert a win timestamp to a unix timeval */
 void win_to_timeval(uint64_t smb2_time, struct smb2_timeval *tv);
